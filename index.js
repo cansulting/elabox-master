@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const logger = require("morgan");
 // define port number
 const port = process.env.PORT || 3002;
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 
@@ -53,7 +53,7 @@ const checkRunning = async () => {
 };
 
 const checkIfFrontendRunning = async () => {
-    runBackend()
+  runBackend();
   const browser = await puppeteer.launch({
     executablePath: "/usr/bin/chromium-browser",
   });
@@ -84,17 +84,26 @@ const runBackend = async () => {
     var modules_exists = await checkFile(companion_directory + "/yarn.lock");
 
     if (!modules_exists) {
-      exec(
-        "yarn install",
-        { cwd: companion_directory },
-        (err, stdout, stderr) => {
-          if (err) {
-            console.log("error", err);
-          }
-          console.log("stderr", stderr);
-          console.log("stdout", stdout);
-        }
-      );
+      const install=spawn("yarn install", { cwd: companion_directory });
+      install.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+      
+      install.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+      });
+      
+      install.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+      });
+
+      install.on('exit', (code) => {
+        console.log(`child process exit with code ${code}`);
+      });
+
+      install.on('error', (code) => {
+        console.log(`child process error with code ${code}`);
+      });
     }
   }
 };
