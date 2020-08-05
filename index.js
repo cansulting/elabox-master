@@ -8,7 +8,7 @@ const logger = require("morgan");
 // define port number
 const port = process.env.PORT || 3002;
 const { exec } = require("child_process");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 
 app.use(logger("dev"));
 app.use(cors());
@@ -49,7 +49,7 @@ const checkRunning = async () => {
 };
 
 const checkIfFrontendRunning = async () => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({executablePath:'/usr/bin/chromium-browser'});
   const page = await browser.newPage();
   await page.goto(url+"/check", { waitUntil: "networkidle2" });
   console.log(await page.waitFor(5000));
