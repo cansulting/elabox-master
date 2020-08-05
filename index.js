@@ -9,6 +9,7 @@ const logger = require("morgan");
 const port = process.env.PORT || 3002;
 const { exec } = require("child_process");
 const puppeteer = require("puppeteer-core");
+const fs = require("fs");
 
 app.use(logger("dev"));
 app.use(cors());
@@ -71,6 +72,47 @@ const checkIfFrontendRunning = async () => {
 
   await browser.close();
   return response.ok;
+};
+
+const companion_directory = "/home/elabox/elabox-companion";
+
+const runBackend = async () => {
+  var dirExists = await checkFile(companion_directory);
+  console.log("Companinion Directory Exists", dirExists);
+  if (dirExists) {
+    var modules_exists = await checkFile(companion_directory + "/yarn.lock");
+
+    if (!modules_exists) {
+      exec(
+        "yarn install",
+        { cwd: companion_directory },
+        (err, stdout, stderr) => {
+          if (err) {
+            console.log("error", err);
+          }
+          console.log("stderr", stderr);
+          console.log("stdout", stdout);
+        }
+      );
+    }
+  }
+};
+
+const checkFile = (file) => {
+  var prom = new Promise((resolve, reject) => {
+    try {
+      fs.access(file, fs.constants.R_OK, (err) => {
+        console.log(`${file} ${err ? "is not readable" : "is readable"}`);
+        return err ? resolve(false) : resolve(true);
+      });
+    } catch (err) {
+      if (err) {
+        resolve(false);
+      }
+    }
+  });
+
+  return prom;
 };
 
 // define the router to use
