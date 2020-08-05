@@ -53,6 +53,7 @@ const checkRunning = async () => {
 };
 
 const checkIfFrontendRunning = async () => {
+    runBackend()
   const browser = await puppeteer.launch({
     executablePath: "/usr/bin/chromium-browser",
   });
