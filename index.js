@@ -118,7 +118,7 @@ const spawnBackend = () => {
       "--log",
       "/home/elabox/ebbackend.log",
     ],
-    { cwd: companion_directory+"/src" }
+    { cwd: companion_directory+"/src_server" }
   );
   install.stdout.on("data", (data) => {
     console.log(`stdout: ${data}`);
