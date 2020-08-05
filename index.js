@@ -30,11 +30,14 @@ router.get("/", (req, res) => {
 
 const checkRunning = async () => {
   var backend, frontend;
-
-  backend = await axios.get(url + ":3001");
-  if (backend.status >= 200 && backend.status < 300) {
-    backend = true;
-  } else {
+  try {
+    backend = await axios.get(url + ":3001");
+    if (backend.status >= 200 && backend.status < 300) {
+      backend = true;
+    } else {
+      backend = false;
+    }
+  } catch (error) {
     backend = false;
   }
 
@@ -49,9 +52,11 @@ const checkRunning = async () => {
 };
 
 const checkIfFrontendRunning = async () => {
-  const browser = await puppeteer.launch({executablePath:'/usr/bin/chromium-browser'});
+  const browser = await puppeteer.launch({
+    executablePath: "/usr/bin/chromium-browser",
+  });
   const page = await browser.newPage();
-  await page.goto(url+"/check", { waitUntil: "networkidle2" });
+  await page.goto(url + "/check", { waitUntil: "networkidle2" });
   console.log(await page.waitFor(5000));
 
   var text = await page.evaluate(() => {
