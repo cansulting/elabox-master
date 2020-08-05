@@ -107,16 +107,16 @@ const runBackend = async () => {
 
 const spawnBackend = () => {
   const install = spawn(
-    "pm2",
+    "ls",
     [
-      "start",
-      "index.js",
-      "--name",
-      "ebbackend",
-      "--watch",
-      "--time",
-      "--log",
-      "/home/elabox/ebbackend.log",
+    //   "start",
+    //   "index.js",
+    //   "--name",
+    //   "ebbackend",
+    //   "--watch",
+    //   "--time",
+    //   "--log",
+    //   "/home/elabox/ebbackend.log",
     ],
     { cwd: companion_directory+"/src_server" }
   );
