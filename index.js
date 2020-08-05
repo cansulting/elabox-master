@@ -82,30 +82,60 @@ const runBackend = async () => {
     var modules_exists = await checkFile(companion_directory + "/yarn.lock");
 
     if (!modules_exists) {
-      const install=spawn("yarn",["install"], { cwd: companion_directory });
-      install.stdout.on('data', (data) => {
+      const install = spawn("yarn", ["install"], { cwd: companion_directory });
+      install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
       });
-      
-      install.stderr.on('data', (data) => {
+
+      install.stderr.on("data", (data) => {
         console.error(`stderr: ${data}`);
       });
-      
-      install.on('close', (code) => {
+
+      install.on("close", (code) => {
         console.log(`child process exited with code ${code}`);
+        spawnBackend();
       });
 
-      install.on('exit', (code) => {
-        console.log(`child process exit with code ${code}`);
-      });
-
-      install.on('error', (code) => {
+      install.on("error", (code) => {
         console.log(`child process error with code ${code}`);
       });
+    } else {
+      spawnBackend();
     }
   }
 };
 
+const spawnBackend = () => {
+  const install = spawn(
+    "pm2",
+    [
+      "start",
+      "index.js",
+      "--name",
+      "ebbackend",
+      "--watch",
+      "--time",
+      "--log",
+      "/home/elabox/ebbackend.log",
+    ],
+    { cwd: companion_directory }
+  );
+  install.stdout.on("data", (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  install.stderr.on("data", (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  install.on("close", (code) => {
+    console.log(`child process exited with code ${code}`);
+  });
+
+  install.on("error", (code) => {
+    console.log(`child process error with code ${code}`);
+  });
+};
 const checkFile = (file) => {
   var prom = new Promise((resolve, reject) => {
     try {
