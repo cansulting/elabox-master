@@ -69,8 +69,6 @@ const checkIfFrontendRunning = async () => {
   var response = JSON.parse(text);
   console.log("bubu");
 
-  await page.screenshot({ path: "example.png" });
-
   await browser.close();
   return response.ok;
 };
@@ -84,7 +82,7 @@ const runBackend = async () => {
     var modules_exists = await checkFile(companion_directory + "/yarn.lock");
 
     if (!modules_exists) {
-      const install=spawn("yarn install", { cwd: companion_directory });
+      const install=spawn("yarn",["install"], { cwd: companion_directory });
       install.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });
