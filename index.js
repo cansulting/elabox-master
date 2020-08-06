@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 // create a routes folder and add routes there
 const router = express.Router();
 
-const  url="http://elabox.local"
+const url = "http://elabox.local";
 // const url = "http://192.168.0.23";
 
 router.get("/", (req, res) => {
@@ -30,9 +30,14 @@ router.get("/", (req, res) => {
 });
 
 router.get("/startBackend", (req, res) => {
-    runBackend();
-    res.send({ok:true})
-  });
+  runBackend();
+  res.send({ ok: true });
+});
+
+router.get("/startFrontend", (req, res) => {
+  runFrontend();
+  res.send({ ok: true });
+});
 
 const checkRunning = async () => {
   var backend, frontend;
@@ -109,15 +114,11 @@ const runBackend = async () => {
   }
 };
 
-const spawnBackend = async() => {
-    console.log("Spawning")
-  const install = spawn(
-    "nodemon",
-    [
-      "index.js",
-    ],
-    { cwd: companion_directory+"/src_server" }
-  );
+const spawnBackend = async () => {
+  console.log("Spawning");
+  const install = spawn("nodemon", ["index.js"], {
+    cwd: companion_directory + "/src_server",
+  });
   install.stdout.on("data", (data) => {
     console.log(`stdout: ${data}`);
   });
@@ -133,8 +134,7 @@ const spawnBackend = async() => {
   install.on("error", (code) => {
     console.log(`child process error with code ${code}`);
   });
-  console.log("Spawned")
-
+  console.log("Spawned");
 };
 const checkFile = (file) => {
   var prom = new Promise((resolve, reject) => {
@@ -151,6 +151,60 @@ const checkFile = (file) => {
   });
 
   return prom;
+};
+
+const runFrontend = async () => {
+  var dirExists = await checkFile(companion_directory);
+  console.log("Companinion Directory Exists", dirExists);
+  if (dirExists) {
+    var modules_exists = await checkFile(companion_directory + "/yarn.lock");
+
+    if (!modules_exists) {
+      const install = spawn("yarn", ["install"], { cwd: companion_directory });
+      install.stdout.on("data", (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      install.stderr.on("data", (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      install.on("close", (code) => {
+        console.log(`child process exited with code ${code}`);
+        spawnFrontend();
+      });
+
+      install.on("error", (code) => {
+        console.log(`child process error with code ${code}`);
+      });
+    } else {
+      spawnFrontend();
+    }
+  }
+};
+
+const spawnFrontend = async () => {
+
+    console.log("Spawning");
+    const install = spawn("yarn", ["build"], {
+      cwd: companion_directory ,
+    });
+    install.stdout.on("data", (data) => {
+      console.log(`stdout build: ${data}`);
+    });
+  
+    install.stderr.on("data", (data) => {
+      console.error(`stderr build: ${data}`);
+    });
+  
+    install.on("close", (code) => {
+      console.log(`build child process exited with code ${code}`);
+    });
+  
+    install.on("error", (code) => {
+      console.log(`build child process error with code ${code}`);
+    });
+    console.log("Spawned");
 };
 
 // define the router to use
