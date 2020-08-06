@@ -45,7 +45,7 @@ router.get("/checkUpdate", async (req, res) => {
   try {
     res.send({ available: await checkUpdateAvailable() });
   } catch (error) {
-      console.error(error)
+    console.error(error);
     res.send(error, 400);
   }
 });
@@ -59,19 +59,21 @@ const checkUpdateAvailable = async () => {
       },
     }
   );
-  exec(
-    "git rev-parse HEAD",
-    { cwd: companion_directory, maxBuffer: 1024 * 500 },
-    (err, stdout, stderr) => {
-      if (err) {
-        console.log("error", err);
-        throw err;
+  return new Promise((resolve, reject) => {
+    exec(
+      "git rev-parse HEAD",
+      { cwd: companion_directory, maxBuffer: 1024 * 500 },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("error", err);
+          reject(err);
+        }
+        console.log("stderr", stderr);
+        console.log("stdout", stdout);
+        resolve(stdout.trim() === resp.sha);
       }
-      console.log("stderr", stderr);
-      console.log("stdout", stdout);
-      return stdout.trim() === resp.sha;
-    }
-  );
+    );
+  });
 };
 
 const checkRunning = async () => {
