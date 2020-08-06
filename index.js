@@ -19,8 +19,8 @@ app.use(bodyParser.json());
 // create a routes folder and add routes there
 const router = express.Router();
 
-// const  url="http://elabox.local"
-const url = "http://192.168.0.23";
+const  url="http://elabox.local"
+// const url = "http://192.168.0.23";
 
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
@@ -28,6 +28,11 @@ router.get("/", (req, res) => {
     res.send(stats);
   });
 });
+
+router.get("/startBackend", (req, res) => {
+    runBackend();
+    res({ok:true})
+  });
 
 const checkRunning = async () => {
   var backend, frontend;
@@ -53,7 +58,6 @@ const checkRunning = async () => {
 };
 
 const checkIfFrontendRunning = async () => {
-  runBackend();
   const browser = await puppeteer.launch({
     executablePath: "/usr/bin/chromium-browser",
   });
