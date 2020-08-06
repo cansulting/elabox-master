@@ -31,7 +31,7 @@ router.get("/", (req, res) => {
 
 router.get("/startBackend", (req, res) => {
     runBackend();
-    res({ok:true})
+    res.send({ok:true})
   });
 
 const checkRunning = async () => {
