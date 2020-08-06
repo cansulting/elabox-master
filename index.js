@@ -45,6 +45,7 @@ router.get("/checkUpdate", async (req, res) => {
   try {
     res.send({ available: await checkUpdateAvailable() });
   } catch (error) {
+      console.error(error)
     res.send(error, 400);
   }
 });
