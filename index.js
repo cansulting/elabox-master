@@ -22,6 +22,10 @@ const router = express.Router();
 const url = "http://elabox.local";
 // const url = "http://192.168.0.23";
 
+
+const companion_directory = "/home/elabox/elabox-companion";
+
+
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
     console.log("Budbak");
@@ -82,16 +86,15 @@ const checkIfFrontendRunning = async () => {
   return response.ok;
 };
 
-const companion_directory = "/home/elabox/elabox-companion";
 
 const runBackend = async () => {
   var dirExists = await checkFile(companion_directory);
   console.log("Companinion Directory Exists", dirExists);
   if (dirExists) {
-    var modules_exists = await checkFile(companion_directory + "/yarn.lock");
+    var modules_exists = await checkFile(companion_directory + "/package-lock.json");
 
     if (!modules_exists) {
-      const install = spawn("yarn", ["install"], { cwd: companion_directory });
+      const install = spawn("npm", ["install"], { cwd: companion_directory });
       install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
       });
@@ -157,10 +160,10 @@ const runFrontend = async () => {
   var dirExists = await checkFile(companion_directory);
   console.log("Companinion Directory Exists", dirExists);
   if (dirExists) {
-    var modules_exists = await checkFile(companion_directory + "/yarn.lock");
+    var modules_exists = await checkFile(companion_directory + "/pakage-lock.json");
 
     if (!modules_exists) {
-      const install = spawn("yarn", ["install"], { cwd: companion_directory });
+      const install = spawn("npm", ["install"], { cwd: companion_directory });
       install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
       });
@@ -186,7 +189,7 @@ const runFrontend = async () => {
 const spawnFrontend = async () => {
 
     console.log("Spawning");
-    const install = spawn("yarn", ["build"], {
+    const install = spawn("npm", ["run","build"], {
       cwd: companion_directory ,
     });
     install.stdout.on("data", (data) => {
@@ -199,6 +202,7 @@ const spawnFrontend = async () => {
   
     install.on("close", (code) => {
       console.log(`build child process exited with code ${code}`);
+      
     });
   
     install.on("error", (code) => {
