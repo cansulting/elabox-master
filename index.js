@@ -51,32 +51,31 @@ router.get("/checkUpdate", async (req, res) => {
 });
 
 router.get("/updateNow", async (req, res) => {
-    spawnFrontend();
+  spawnFrontend();
   res.send({ ok: true });
+});
+
+const updateRepo = () => {
+  const git = spawn("git", ["pull"], {
+    cwd: companion_directory,
+  });
+  git.stdout.on("data", (data) => {
+    console.log(`git stdout: ${data}`);
   });
 
-  const updateRepo=()=>{
-    const git = spawn("git", ["pull"], {
-        cwd: companion_directory,
-      });
-      git.stdout.on("data", (data) => {
-        console.log(`git stdout: ${data}`);
-      });
+  git.stderr.on("data", (data) => {
+    console.error(`git stderr: ${data}`);
+  });
 
-      git.stderr.on("data", (data) => {
-        console.error(`git stderr: ${data}`);
-      });
+  git.on("close", (code) => {
+    console.log(`git child process exited with code ${code}`);
+    spawnFrontend();
+  });
 
-      git.on("close", (code) => {
-        console.log(`git child process exited with code ${code}`);
-        spawnFrontend();
-      });
-
-      git.on("error", (code) => {
-        console.log(` gitchild process error with code ${code}`);
-      });
-  }
-
+  git.on("error", (code) => {
+    console.log(` gitchild process error with code ${code}`);
+  });
+};
 
 const checkUpdateAvailable = async () => {
   return new Promise(async (resolve, reject) => {
@@ -281,7 +280,8 @@ const spawnFrontend = async () => {
         } else {
           console.log("rm", stdout);
           exec(
-            "ls",
+            "echo elabox | sudo -S cp -r build/ /var/www/elabox/build/",
+            { cwd: companion_directory, maxBuffer: 1024 * 500 },
             (err, stdout, stderr) => {
               if (err) {
                 console.error("cp", err);
