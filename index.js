@@ -51,18 +51,18 @@ router.get("/checkUpdate", async (req, res) => {
 });
 
 const checkUpdateAvailable = async () => {
-  var resp = await axios.get(
-    "https://api.github.com/repos/ademcan/elabox-companion/commits/master",
-    {
-      headers: {
-        Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
-      },
-    }
-  );
+  return new Promise(async (resolve, reject) => {
+    var resp = await axios.get(
+      "https://api.github.com/repos/ademcan/elabox-companion/commits/master",
+      {
+        headers: {
+          Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
+        },
+      }
+    );
 
-  console.log("Response", resp)
-  console.log("Response", resp.data.sha)
-  return new Promise((resolve, reject) => {
+    console.log("Response", resp);
+    console.log("Response", resp.data.sha);
     exec(
       "git rev-parse HEAD",
       { cwd: companion_directory, maxBuffer: 1024 * 500 },
@@ -72,7 +72,7 @@ const checkUpdateAvailable = async () => {
           reject(err);
         }
         console.log("stderr", stderr);
-        console.log("stdout", stdout,  resp.sha);
+        console.log("stdout", stdout, resp.sha);
         resolve(stdout.trim() !== resp.data.sha);
       }
     );
