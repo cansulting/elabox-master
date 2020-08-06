@@ -70,7 +70,7 @@ const checkUpdateAvailable = async () => {
         }
         console.log("stderr", stderr);
         console.log("stdout", stdout,  resp.sha);
-        resolve(stdout.trim() !== resp.sha);
+        resolve(stdout.trim() !== resp.data.sha);
       }
     );
   });
