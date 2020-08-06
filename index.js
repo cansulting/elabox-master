@@ -51,7 +51,7 @@ router.get("/checkUpdate", async (req, res) => {
 });
 
 router.get("/updateNow", async (req, res) => {
-    updateRepo();
+    spawnFrontend();
   res.send({ ok: true });
   });
 
