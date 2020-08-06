@@ -59,6 +59,8 @@ const checkUpdateAvailable = async () => {
       },
     }
   );
+
+  console.log("Response", resp)
   return new Promise((resolve, reject) => {
     exec(
       "git rev-parse HEAD",
