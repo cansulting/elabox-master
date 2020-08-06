@@ -42,6 +42,14 @@ router.get("/startFrontend", (req, res) => {
 });
 
 router.get("/checkUpdate", async (req, res) => {
+  try {
+    res.send({ available: await checkUpdateAvailable() });
+  } catch (error) {
+    res.send(error, 400);
+  }
+});
+
+const checkUpdateAvailable = async () => {
   var resp = await axios.get(
     "https://api.github.com/repos/ademcan/elabox-companion/commits/master",
     {
@@ -56,18 +64,14 @@ router.get("/checkUpdate", async (req, res) => {
     (err, stdout, stderr) => {
       if (err) {
         console.log("error", err);
-        res.send({ latest: resp.data.sha,current:err });
-
+        throw err;
       }
       console.log("stderr", stderr);
       console.log("stdout", stdout);
-      res.send({ latest: resp.data.sha,current:stdout.trim() });
-
+      return stdout.trim() === resp.sha;
     }
   );
-
-  console.log(resp);
-});
+};
 
 const checkRunning = async () => {
   var backend, frontend;
