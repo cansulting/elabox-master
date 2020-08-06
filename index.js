@@ -22,9 +22,7 @@ const router = express.Router();
 const url = "http://elabox.local";
 // const url = "http://192.168.0.23";
 
-
 const companion_directory = "/home/elabox/elabox-companion";
-
 
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
@@ -41,6 +39,34 @@ router.get("/startBackend", (req, res) => {
 router.get("/startFrontend", (req, res) => {
   runFrontend();
   res.send({ ok: true });
+});
+
+router.get("/checkUpdate", async (req, res) => {
+  var resp = await axios.get(
+    "https://api.github.com/repos/ademcan/elabox-companion/commits/master",
+    {
+      headers: {
+        Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
+      },
+    }
+  );
+  exec(
+    "git rev-parse HEAD",
+    { cwd: companion_directory, maxBuffer: 1024 * 500 },
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log("error", err);
+        res.send({ latest: resp.data.sha,current:err });
+
+      }
+      console.log("stderr", stderr);
+      console.log("stdout", stdout);
+      res.send({ latest: resp.data.sha,current:stdout.trim() });
+
+    }
+  );
+
+  console.log(resp);
 });
 
 const checkRunning = async () => {
@@ -86,15 +112,18 @@ const checkIfFrontendRunning = async () => {
   return response.ok;
 };
 
-
 const runBackend = async () => {
   var dirExists = await checkFile(companion_directory);
   console.log("Companinion Directory Exists", dirExists);
   if (dirExists) {
-    var modules_exists = await checkFile(companion_directory + "/package-lock.json");
+    var modules_exists = await checkFile(
+      companion_directory + "/package-lock.json"
+    );
 
     if (!modules_exists) {
-      const install = spawn("npm", ["install"], { cwd: companion_directory });
+      const install = spawn("sh", ["-c", "sudo -K << elabox npm install"], {
+        cwd: companion_directory,
+      });
       install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
       });
@@ -160,11 +189,15 @@ const runFrontend = async () => {
   var dirExists = await checkFile(companion_directory);
   console.log("Companinion Directory Exists", dirExists);
   if (dirExists) {
-    var modules_exists = await checkFile(companion_directory + "/package-lock.json");
-    console.log(modules_exists)
+    var modules_exists = await checkFile(
+      companion_directory + "/package-lock.json"
+    );
+    console.log(modules_exists);
     if (!modules_exists) {
-        console.log("npm running")
-      const install = spawn("npm", ["install"], { cwd: companion_directory });
+      console.log("npm running");
+      const install = spawn("sh", ["-c", "sudo -K << elabox npm install"], {
+        cwd: companion_directory,
+      });
       install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
       });
@@ -188,28 +221,56 @@ const runFrontend = async () => {
 };
 
 const spawnFrontend = async () => {
+  console.log("Spawning");
+  const install = spawn("npm", ["run", "build"], {
+    cwd: companion_directory,
+  });
+  install.stdout.on("data", (data) => {
+    console.log(`stdout build: ${data}`);
+  });
 
-    console.log("Spawning");
-    const install = spawn("npm", ["run","build"], {
-      cwd: companion_directory ,
-    });
-    install.stdout.on("data", (data) => {
-      console.log(`stdout build: ${data}`);
-    });
-  
-    install.stderr.on("data", (data) => {
-      console.error(`stderr build: ${data}`);
-    });
-  
-    install.on("close", (code) => {
-      console.log(`build child process exited with code ${code}`);
+  install.stderr.on("data", (data) => {
+    console.error(`stderr build: ${data}`);
+  });
 
-    });
-  
-    install.on("error", (code) => {
-      console.log(`build child process error with code ${code}`);
-    });
-    console.log("Spawned");
+  install.on("close", (code) => {
+    console.log(`build child process exited with code ${code}`);
+    exec(
+      "echo elabox | sudo -S rm -rf /var/www/elabox/build/",
+      (err, stdout, stderr) => {
+        if (err) {
+          console.error("rm", err);
+        } else {
+          console.log("rm", stdout);
+          exec(
+            "echo elabox | sudo -S cp -r build/ /var/www/elabox/build/",
+            (err, stdout, stderr) => {
+              if (err) {
+                console.error("cp", err);
+              } else {
+                console.log("cp", stdout);
+                exec(
+                  "echo elabox | sudo -S systemctl restart nginx",
+                  (err, stdout, stderr) => {
+                    if (err) {
+                      console.error("systemctl", err);
+                    } else {
+                      console.log("systemctl", stdout, "success");
+                    }
+                  }
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+  });
+
+  install.on("error", (code) => {
+    console.log(`build child process error with code ${code}`);
+  });
+  console.log("Spawned");
 };
 
 // define the router to use
