@@ -160,9 +160,10 @@ const runFrontend = async () => {
   var dirExists = await checkFile(companion_directory);
   console.log("Companinion Directory Exists", dirExists);
   if (dirExists) {
-    var modules_exists = await checkFile(companion_directory + "/pakage-lock.json");
-
+    var modules_exists = await checkFile(companion_directory + "/package-lock.json");
+    console.log(modules_exists)
     if (!modules_exists) {
+        console.log("npm running")
       const install = spawn("npm", ["install"], { cwd: companion_directory });
       install.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
@@ -202,7 +203,7 @@ const spawnFrontend = async () => {
   
     install.on("close", (code) => {
       console.log(`build child process exited with code ${code}`);
-      
+
     });
   
     install.on("error", (code) => {
