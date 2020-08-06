@@ -69,7 +69,7 @@ const checkUpdateAvailable = async () => {
           reject(err);
         }
         console.log("stderr", stderr);
-        console.log("stdout", stdout);
+        console.log("stdout", stdout,  resp.sha);
         resolve(stdout.trim() !== resp.sha);
       }
     );
