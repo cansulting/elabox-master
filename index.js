@@ -109,9 +109,10 @@ const runBackend = async () => {
   }
 };
 
-const spawnBackend = () => {
+const spawnBackend = async() => {
+    console.log("Spawning")
   const install = spawn(
-    "node",
+    "nodemon",
     [
       "index.js",
     ],
@@ -132,6 +133,8 @@ const spawnBackend = () => {
   install.on("error", (code) => {
     console.log(`child process error with code ${code}`);
   });
+  console.log("Spawned")
+
 };
 const checkFile = (file) => {
   var prom = new Promise((resolve, reject) => {
