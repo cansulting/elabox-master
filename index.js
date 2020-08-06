@@ -281,7 +281,7 @@ const spawnFrontend = async () => {
         } else {
           console.log("rm", stdout);
           exec(
-            "echo elabox | sudo -S cp -r build/ /var/www/elabox/build/",
+            "ls",
             (err, stdout, stderr) => {
               if (err) {
                 console.error("cp", err);
