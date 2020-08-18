@@ -1,5 +1,11 @@
 const express = require("express");
-const axios = require("axios");
+const https = require("https");
+const axiosP = require("axios");
+const axios = axiosP.create({
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false
+  })
+});
 const app = express();
 // to allow cross-origin request
 const cors = require("cors");
@@ -10,6 +16,8 @@ const port = process.env.PORT || 3002;
 const { exec, spawn } = require("child_process");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey("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");
 
 app.use(logger("dev"));
 app.use(cors());
@@ -22,7 +30,79 @@ const router = express.Router();
 const url = "http://elabox.local";
 // const url = "http://192.168.0.23";
 
-const companion_directory = "/home/elabox/elabox-companion";
+const companion_directory = "/home/elabox/companion";
+let elaPath = "/home/elabox/supernode/ela"
+let keyStorePath = elaPath + "/keystore.dat"
+
+
+setTimeout(async () => {
+  const { backend, frontend } = await checkRunning()
+
+  if (!backend) {
+    runBackend()
+    console.log("Backend off, starting it ")
+
+  }
+}, 10 * 1000)
+
+
+
+
+
+
+
+
+
+setInterval(async () => {
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  console.log(Date.now())
+  const keyExists = await checkFile(keyStorePath)
+  console.log(keyExists ? "Yes" : "No")
+  const elaRunning = await checkElaRunning()
+  console.log("Ela Running", elaRunning)
+  if (keyExists && elaRunning) {
+    const keyStoreObj = JSON.parse(fs.readFileSync(keyStorePath))
+    const wallet = keyStoreObj.Account[0].Address
+    const serial = await getSerialKey()
+    const payload = { serial, wallet }
+
+    var resp = await axios.post(
+      "https://159.100.248.209:8080/",
+      payload
+
+    );
+
+    console.log("Response", resp.data);
+  }
+
+
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+}, 1000 * 60 * 10)
+
+
+const getSerialKey = () => {
+  var prom = new Promise((resolve, reject) => {
+    exec(
+      "cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",
+      { maxBuffer: 1024 * 500 },
+
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("Failed CP");
+          throw (err)
+
+        } else {
+          console.log("Success CP");
+          resolve(stdout.trim())
+
+        }
+      }
+    );
+  });
+
+  return prom;
+}
+
 
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
@@ -51,7 +131,8 @@ router.get("/checkUpdate", async (req, res) => {
 });
 
 router.get("/updateNow", async (req, res) => {
-    updateRepo();
+  await replaceWithMaintainencePage()
+  updateRepo();
   res.send({ ok: true });
 });
 
@@ -69,7 +150,7 @@ const updateRepo = () => {
 
   git.on("close", (code) => {
     console.log(`git child process exited with code ${code}`);
-    spawnFrontend();
+    updatePackages();
   });
 
   git.on("error", (code) => {
@@ -257,6 +338,31 @@ const runFrontend = async () => {
   }
 };
 
+const updatePackages = async () => {
+  console.log("Installing");
+  const install = spawn("npm", ["i"], {
+    cwd: companion_directory,
+  });
+  install.stdout.on("data", (data) => {
+    console.log(`stdout build: ${data}`);
+  });
+
+  install.stderr.on("data", (data) => {
+    console.error(`stderr build: ${data}`);
+  });
+
+  install.on("close", (code) => {
+    console.log(`build child process exited with code ${code}`);
+    spawnFrontend()
+  });
+
+  install.on("error", (code) => {
+    console.log(`build child process error with code ${code}`);
+  });
+  console.log("Installed");
+};
+
+
 const spawnFrontend = async () => {
   console.log("Spawning");
   const install = spawn("npm", ["run", "build"], {
@@ -310,6 +416,88 @@ const spawnFrontend = async () => {
   });
   console.log("Spawned");
 };
+
+const replaceWithMaintainencePage = () => {
+  var prom = new Promise((resolve, reject) => {
+    exec(
+      "echo elabox | sudo -S cp ./maintainence/index.html /var/www/elabox/build/index.html",
+      { maxBuffer: 1024 * 500 },
+
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("Failed CP");
+
+        } else {
+          console.log("Success CP");
+
+        }
+        resolve()
+      }
+    );
+  });
+
+  return prom;
+
+
+
+
+
+
+}
+
+
+const checkElaRunning = () => {
+
+  return new Promise((resolve, reject) => {
+    exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      { stdout == "" ? elaRunning = false : elaRunning = true }
+      resolve(elaRunning)
+    })
+  })
+}
+
+
+
+// exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+//   { stdout == "" ? didRunning = false : didRunning = true }
+//   exec('pidof token', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+//     { stdout == "" ? tokenRunning = false : tokenRunning = true }
+//     exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+//       { stdout == "" ? carrierRunning = false : carrierRunning = true }
+//       exec('curl -s ipinfo.io/ip', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+//         // res.json({ elaRunning, didRunning, tokenRunning, carrierRunning, carrierIp: stdout })
+//       });
+//     });
+//   });
+// });
+
+router.post("/sendSupportEmail", async (req, res) => {
+
+
+  const msg = {
+    to: 'purujit.bansal9@gmail.com',
+    from: req.body.email.trim(),
+    subject: 'Elabox Support Needed ' + req.body.name,
+    text: 'Elabox Support is needed to\n Name: ' + req.body.name + "\nEmail: " + req.body.email + "\nProblem: " + req.body.problem,
+  };
+  sgMail.send(msg, (err, result) => {
+    if (err) {
+      res.status(500)
+    }
+    else {
+      res.send({ ok: true })
+    }
+
+  });
+
+
+
+})
+
+
+
+
+
 
 // define the router to use
 app.use("/", router);
