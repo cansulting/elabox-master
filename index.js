@@ -43,6 +43,8 @@ setTimeout(async () => {
     console.log("Backend off, starting it ")
 
   }
+
+
 }, 10 * 1000)
 
 
@@ -239,25 +241,20 @@ const runBackend = async () => {
     );
 
     if (!modules_exists) {
-      const install = spawn("sh", ["-c", "sudo -K << elabox npm install"], {
-        cwd: companion_directory,
-      });
-      install.stdout.on("data", (data) => {
-        console.log(`stdout: ${data}`);
-      });
+      exec(
+        "echo elabox | sudo -S npm install",
+        { cwd: companion_directory, maxBuffer: 1024 * 500 },
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error("npm i ", err);
+          } else {
+            console.log("npm i ", stdout);
+            spawnBackend();
 
-      install.stderr.on("data", (data) => {
-        console.error(`stderr: ${data}`);
-      });
+          }
+        }
+      );
 
-      install.on("close", (code) => {
-        console.log(`child process exited with code ${code}`);
-        spawnBackend();
-      });
-
-      install.on("error", (code) => {
-        console.log(`child process error with code ${code}`);
-      });
     } else {
       spawnBackend();
     }
@@ -312,26 +309,20 @@ const runFrontend = async () => {
     );
     console.log(modules_exists);
     if (!modules_exists) {
-      console.log("npm running");
-      const install = spawn("sh", ["-c", "sudo -K << elabox npm install"], {
-        cwd: companion_directory,
-      });
-      install.stdout.on("data", (data) => {
-        console.log(`stdout: ${data}`);
-      });
+      exec(
+        "echo elabox | sudo -S npm install",
+        { cwd: companion_directory, maxBuffer: 1024 * 500 },
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error("npm i ", err);
+          } else {
+            console.log("npm i ", stdout);
+            spawnFrontend();
 
-      install.stderr.on("data", (data) => {
-        console.error(`stderr: ${data}`);
-      });
+          }
+        }
+      );
 
-      install.on("close", (code) => {
-        console.log(`child process exited with code ${code}`);
-        spawnFrontend();
-      });
-
-      install.on("error", (code) => {
-        console.log(`child process error with code ${code}`);
-      });
     } else {
       spawnFrontend();
     }
