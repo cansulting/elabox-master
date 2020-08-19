@@ -15,3 +15,10 @@ tho above command ^^ should be issued only from the directory /home/elabox/elabo
 ### pm2 startup
 ### pm2 save
 
+
+
+# Nginx Conf 
+ nginx conf to written in file /etc/nginx/sites-available/default
+ default file shared in repo
+
+react build folder to be placed at /var/www/elabox/
