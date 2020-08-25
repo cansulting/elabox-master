@@ -1,6 +1,10 @@
 const express = require("express");
 const https = require("https");
 const axiosP = require("axios");
+var shell = require('shelljs');
+
+// const fan_control = require("./control_fan")
+
 const axios = axiosP.create({
   httpsAgent: new https.Agent({
     rejectUnauthorized: false
@@ -33,6 +37,7 @@ const url = "http://elabox.local";
 const companion_directory = "/home/elabox/companion";
 let elaPath = "/home/elabox/supernode/ela"
 let keyStorePath = elaPath + "/keystore.dat"
+let binariesPath = "/home/elabox/elabox-binaries"
 
 
 setTimeout(async () => {
@@ -56,7 +61,9 @@ setTimeout(async () => {
 
 
 setInterval(async () => {
+
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  // await fan_control()
   console.log(Date.now())
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
@@ -80,6 +87,42 @@ setInterval(async () => {
 
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 }, 1000 * 60 * 10)
+
+
+
+
+
+const runCarrier = () => {
+  console.log("Running Carrier Script")
+
+  var prom = new Promise((resolve, reject) => {
+    shell.cd(binariesPath)
+    shell.exec(
+      "./check_carrier.sh",
+      { maxBuffer: 1024 * 500 * 500 },
+
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("Failed CP");
+          throw (err)
+
+        } else {
+          console.log("Success CP");
+          resolve(stdout.trim())
+        }
+      }
+    );
+  });
+
+  return prom;
+}
+
+
+setInterval(runCarrier, 1000 * 60 * 60 * 8)
+
+
+
+
 
 
 const getSerialKey = () => {
@@ -267,11 +310,11 @@ const spawnBackend = async () => {
     cwd: companion_directory + "/src_server",
   });
   install.stdout.on("data", (data) => {
-    console.log(`stdout: ${data}`);
+    console.log(`Backend stdout: ${data}`);
   });
 
   install.stderr.on("data", (data) => {
-    console.error(`stderr: ${data}`);
+    console.error(`backend stderr: ${data}`);
   });
 
   install.on("close", (code) => {
@@ -496,5 +539,7 @@ app.use("/", router);
 app.listen(port, function () {
   console.log("Runnning on " + port);
 });
+
+
 
 module.exports = app;
