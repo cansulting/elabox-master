@@ -114,7 +114,7 @@ runBackend()
 const npmI = () => {
   console.log("Installing Modules")
   exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
-    // console.log("Npm Install", stdout)
+    console.log("Npm Install", stdout)
     process.exit()
   })
 }
@@ -144,7 +144,7 @@ setInterval(async () => {
   console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
   if (masterUpdateAvailable) {
     await updateMasterRepo()
-    process.exit()
+    npmI()
   }
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
