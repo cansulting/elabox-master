@@ -3,7 +3,6 @@ const https = require("https");
 const axiosP = require("axios");
 var shell = require('shelljs');
 
-// const fan_control = require("./control_fan")
 
 const axios = axiosP.create({
   httpsAgent: new https.Agent({
@@ -89,26 +88,6 @@ const runBackend = async () => {
 
 runBackend()
 
-// TODO: Think of a way to handle power loss while master update
-
-// checkFile("package-lock.json").then(exists => {
-//   if (exists) {
-//     exec("git log -1 --format=%at | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S", (error, stdout, stderr) => {
-//       const commitTime = Date.parse(stdout.trim())
-//       var stats = fs.statSync("package-lock.json");
-//       console.log(stats)
-//       const lastModified = stats.atimeMs
-//       console.log("Last COmmit", commitTime, " last git pull", lastModified)
-//       if (commitTime > lastModified) {
-//         npmI()
-//       }
-
-//     })
-
-//   } else {
-//     npmI()
-//   }
-// })
 
 
 const npmI = () => {
@@ -135,7 +114,7 @@ setInterval(async () => {
   }
 
 
-}, 60 * 1000)
+}, 24 * 60 * 60 * 1000)
 
 
 setInterval(async () => {
@@ -144,27 +123,40 @@ setInterval(async () => {
   console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
   if (masterUpdateAvailable) {
     await updateMasterRepo()
-    npmI()
+    process.exit()
   }
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 }, 1000 * 60 * 60 * 4)
 
 
+const checkFan = () => {
+  return new Promise((resolve, reject) => {
+    console.log("Running fan control")
+    exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
+      console.log("Fan Err", error)
+      console.log("Fan stdout", stdout)
+      console.log("Fan stderr", stderr)
 
+      resolve()
+    })
+  })
+}
 
 
 
 setInterval(async () => {
 
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-  // await fan_control()
+  checkFan()
   console.log(Date.now())
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
-  const elaRunning = await checkElaRunning()
-  console.log("Ela Running", elaRunning)
-  if (keyExists && elaRunning) {
+  const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
+  const running = allServices.every(v => { v === true })
+
+  console.log("All Running", running)
+  if (keyExists && running) {
     const keyStoreObj = JSON.parse(fs.readFileSync(keyStorePath))
     const wallet = keyStoreObj.Account[0].Address
     const serial = await getSerialKey()
@@ -188,7 +180,7 @@ setInterval(async () => {
 
 
 const runCarrier = () => {
-  console.log("Running Carrier Script")
+  console.log("Running Check Carrier Script")
 
   var prom = new Promise((resolve, reject) => {
     shell.cd(binariesPath)
@@ -213,7 +205,7 @@ const runCarrier = () => {
 }
 
 
-setInterval(runCarrier, 1000 * 60 * 60 * 8)
+setInterval(runCarrier, 1000 * 60 * 60 * 4)
 
 
 
@@ -599,6 +591,31 @@ const checkElaRunning = () => {
     })
   })
 }
+
+
+
+const checkDidRunning = () => {
+
+  return new Promise((resolve, reject) => {
+    exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      { stdout == "" ? didRunning = false : didRunning = true }
+      resolve(didRunning)
+    })
+  })
+}
+
+const checkCarrierRunning = () => {
+
+  return new Promise((resolve, reject) => {
+    exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      { stdout == "" ? carrierRunning = false : carrierRunning = true }
+      resolve(carrierRunning)
+    });
+  })
+}
+
+
+
 
 
 
