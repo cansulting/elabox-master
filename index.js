@@ -40,7 +40,92 @@ let keyStorePath = elaPath + "/keystore.dat"
 let binariesPath = "/home/elabox/elabox-binaries"
 
 
-setTimeout(async () => {
+
+const checkFile = (file) => {
+  var prom = new Promise((resolve, reject) => {
+    try {
+      fs.access(file, fs.constants.R_OK, (err) => {
+        console.log(`${file} ${err ? "is not readable" : "is readable"}`);
+        return err ? resolve(false) : resolve(true);
+      });
+    } catch (err) {
+      if (err) {
+        resolve(false);
+      }
+    }
+  });
+
+  return prom;
+};
+
+const runBackend = async () => {
+  var dirExists = await checkFile(companion_directory);
+  console.log("Companinion Directory Exists", dirExists);
+  if (dirExists) {
+    var modules_exists = await checkFile(
+      companion_directory + "/package-lock.json"
+    );
+
+    if (!modules_exists) {
+      exec(
+        "echo elabox | sudo -S npm install",
+        { cwd: companion_directory, maxBuffer: 1024 * 500 },
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error("npm i ", err);
+          } else {
+            console.log("npm i ", stdout);
+            spawnBackend();
+
+          }
+        }
+      );
+
+    } else {
+      spawnBackend();
+    }
+  }
+};
+
+runBackend()
+
+// TODO: Think of a way to handle power loss while master update
+
+// checkFile("package-lock.json").then(exists => {
+//   if (exists) {
+//     exec("git log -1 --format=%at | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S", (error, stdout, stderr) => {
+//       const commitTime = Date.parse(stdout.trim())
+//       var stats = fs.statSync("package-lock.json");
+//       console.log(stats)
+//       const lastModified = stats.atimeMs
+//       console.log("Last COmmit", commitTime, " last git pull", lastModified)
+//       if (commitTime > lastModified) {
+//         npmI()
+//       }
+
+//     })
+
+//   } else {
+//     npmI()
+//   }
+// })
+
+
+const npmI = () => {
+  console.log("Installing Modules")
+  exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
+    // console.log("Npm Install", stdout)
+    process.exit()
+  })
+}
+
+setInterval(npmI, 1000 * 60 * 60 * 2)
+
+
+
+
+
+setInterval(async () => {
   const { backend, frontend } = await checkRunning()
 
   if (!backend) {
@@ -50,10 +135,20 @@ setTimeout(async () => {
   }
 
 
-}, 10 * 1000)
+}, 60 * 1000)
 
 
+setInterval(async () => {
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  const masterUpdateAvailable = await checkMasterUpdateAvailable()
+  console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
+  if (masterUpdateAvailable) {
+    await updateMasterRepo()
+    process.exit()
+  }
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
+}, 1000 * 60 * 60 * 4)
 
 
 
@@ -203,6 +298,63 @@ const updateRepo = () => {
   });
 };
 
+const updateMasterRepo = () => {
+  return new Promise((resolve, reject) => {
+    const git = spawn("git", ["pull"]);
+    git.stdout.on("data", (data) => {
+      console.log(`git stdout: ${data}`);
+    });
+
+    git.stderr.on("data", (data) => {
+      console.error(`git stderr: ${data}`);
+    });
+
+    git.on("close", (code) => {
+      console.log(`git child process exited with code ${code}`);
+      resolve()
+    });
+
+    git.on("error", (code) => {
+      console.log(` gitchild process error with code ${code}`);
+      resolve()
+    });
+
+
+  })
+
+};
+
+
+const checkMasterUpdateAvailable = async () => {
+  return new Promise(async (resolve, reject) => {
+    var resp = await axios.get(
+      "https://api.github.com/repos/ademcan/elabox-master/commits/master",
+      {
+        headers: {
+          Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
+        },
+      }
+    );
+
+    // console.log("Response", resp);
+    // console.log("Response", resp.data.sha);
+    exec(
+      "git rev-parse HEAD",
+      { maxBuffer: 1024 * 500 },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("error", err);
+          reject(err);
+        }
+        console.log("stderr", stderr);
+        console.log("stdout", stdout, resp.data.sha);
+        resolve(stdout.trim() !== resp.data.sha);
+      }
+    );
+  });
+};
+
+
 const checkUpdateAvailable = async () => {
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
@@ -275,34 +427,7 @@ const checkIfFrontendRunning = async () => {
   return response.ok;
 };
 
-const runBackend = async () => {
-  var dirExists = await checkFile(companion_directory);
-  console.log("Companinion Directory Exists", dirExists);
-  if (dirExists) {
-    var modules_exists = await checkFile(
-      companion_directory + "/package-lock.json"
-    );
 
-    if (!modules_exists) {
-      exec(
-        "echo elabox | sudo -S npm install",
-        { cwd: companion_directory, maxBuffer: 1024 * 500 },
-        (err, stdout, stderr) => {
-          if (err) {
-            console.error("npm i ", err);
-          } else {
-            console.log("npm i ", stdout);
-            spawnBackend();
-
-          }
-        }
-      );
-
-    } else {
-      spawnBackend();
-    }
-  }
-};
 
 const spawnBackend = async () => {
   console.log("Spawning");
@@ -326,22 +451,7 @@ const spawnBackend = async () => {
   });
   console.log("Spawned");
 };
-const checkFile = (file) => {
-  var prom = new Promise((resolve, reject) => {
-    try {
-      fs.access(file, fs.constants.R_OK, (err) => {
-        console.log(`${file} ${err ? "is not readable" : "is readable"}`);
-        return err ? resolve(false) : resolve(true);
-      });
-    } catch (err) {
-      if (err) {
-        resolve(false);
-      }
-    }
-  });
 
-  return prom;
-};
 
 const runFrontend = async () => {
   var dirExists = await checkFile(companion_directory);
