@@ -20,5 +20,13 @@
     "onoff": "^6.0.0",
     "puppeteer-core": "^5.2.1",
     "shelljs": "^0.8.4"
+  },
+  "husky": {
+    "hooks": {
+      "post-merge": "npm install"
+    }
+  },
+  "devDependencies": {
+    "husky": "^4.2.5"
   }
 }

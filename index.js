@@ -431,7 +431,7 @@ const checkIfFrontendRunning = async () => {
 
 const spawnBackend = async () => {
   console.log("Spawning");
-  const install = spawn("nodemon", ["index.js"], {
+  const install = spawn("nodemon", ["index.js", "--ignore", "/elastos/"], {
     cwd: companion_directory + "/src_server",
   });
   install.stdout.on("data", (data) => {
