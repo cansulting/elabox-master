@@ -137,7 +137,6 @@ const checkFan = () => {
       console.log("Fan Err", error)
       console.log("Fan stdout", stdout)
       console.log("Fan stderr", stderr)
-
       resolve()
     })
   })
@@ -597,7 +596,7 @@ const checkElaRunning = () => {
 const checkDidRunning = () => {
 
   return new Promise((resolve, reject) => {
-    exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+    exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
       { stdout == "" ? didRunning = false : didRunning = true }
       resolve(didRunning)
     })
