@@ -153,7 +153,7 @@ setInterval(async () => {
   console.log(keyExists ? "Yes" : "No")
   const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
   console.log(allServices)
-  const running = allServices.every(v => { v === true })
+  const running = allServices.every( (v) =>  v === true )
 
   console.log("All Running", running)
   if (keyExists && running) {
@@ -173,7 +173,7 @@ setInterval(async () => {
 
 
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-}, 1000 * 60 * 10)
+}, 100 * 60 * 10)
 
 
 
