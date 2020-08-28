@@ -152,6 +152,7 @@ setInterval(async () => {
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
   const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
+  console.log(allServices)
   const running = allServices.every(v => { v === true })
 
   console.log("All Running", running)
@@ -585,7 +586,9 @@ const checkElaRunning = () => {
 
   return new Promise((resolve, reject) => {
     exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? elaRunning = false : elaRunning = true }
+      console.log("checkElaRunning ", elaRunning)
       resolve(elaRunning)
     })
   })
@@ -597,7 +600,9 @@ const checkDidRunning = () => {
 
   return new Promise((resolve, reject) => {
     exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? didRunning = false : didRunning = true }
+      console.log("checkDidRunning ", didRunning)
       resolve(didRunning)
     })
   })
@@ -607,7 +612,9 @@ const checkCarrierRunning = () => {
 
   return new Promise((resolve, reject) => {
     exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? carrierRunning = false : carrierRunning = true }
+      console.log("checkCarriereRunning ", carrierRunning)
       resolve(carrierRunning)
     });
   })
