@@ -133,7 +133,7 @@ setInterval(async () => {
 const checkFan = () => {
   return new Promise((resolve, reject) => {
     console.log("Running fan control")
-    exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
+    exec("echo elabox | sudo node control_fan.js", (error, stdout, stderr) => {
       console.log("Fan Err", error)
       console.log("Fan stdout", stdout)
       console.log("Fan stderr", stderr)
