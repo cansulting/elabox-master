@@ -22,3 +22,8 @@ tho above command ^^ should be issued only from the directory /home/elabox/elabo
  default file shared in repo
 
 react build folder to be placed at /var/www/elabox/
+
+
+# New Steps ADDED on 11/09/2020
+### @reboot sleep 60 && sh /home/elabox/elabox-master/startup_npmi.sh
+ Add ^^ this line to the and of config at -> `crontab -e`
