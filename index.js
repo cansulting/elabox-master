@@ -144,11 +144,10 @@ setInterval(async () => {
 const checkFan = () => {
   return new Promise((resolve, reject) => {
     console.log("Running fan control")
-    exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
+    exec("echo elabox | sudo -S node control_fan.js", (error, stdout, stderr) => {
       console.log("Fan Err", error)
       console.log("Fan stdout", stdout)
       console.log("Fan stderr", stderr)
-
       resolve()
     })
   })
@@ -164,7 +163,8 @@ setInterval(async () => {
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
   const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
-  const running = allServices.every(v => { v === true })
+  console.log(allServices)
+  const running = allServices.every( (v) =>  v === true )
 
   console.log("All Running", running)
   if (keyExists && running) {
@@ -651,7 +651,9 @@ const checkElaRunning = () => {
 
   return new Promise((resolve, reject) => {
     exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? elaRunning = false : elaRunning = true }
+      console.log("checkElaRunning ", elaRunning)
       resolve(elaRunning)
     })
   })
@@ -662,8 +664,10 @@ const checkElaRunning = () => {
 const checkDidRunning = () => {
 
   return new Promise((resolve, reject) => {
-    exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+    exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? didRunning = false : didRunning = true }
+      console.log("checkDidRunning ", didRunning)
       resolve(didRunning)
     })
   })
@@ -673,7 +677,9 @@ const checkCarrierRunning = () => {
 
   return new Promise((resolve, reject) => {
     exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      console.log(stdout)
       { stdout == "" ? carrierRunning = false : carrierRunning = true }
+      console.log("checkCarriereRunning ", carrierRunning)
       resolve(carrierRunning)
     });
   })
