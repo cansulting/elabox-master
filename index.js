@@ -86,7 +86,6 @@ const runBackend = async () => {
   }
 };
 
-runBackend()
 
 
 
@@ -98,34 +97,46 @@ const npmI = () => {
   })
 }
 
-setInterval(npmI, 1000 * 60 * 60 * 2)
+const checkAndRunBackend = async () => {
 
+  if (!await checkIfBackendRunning()) {
+    console.log("~~~~~~Backend off, starting it~~~~~~~~ ")
 
-
-
-
-setInterval(async () => {
-  const { backend, frontend } = await checkRunning()
-
-  if (!backend) {
     runBackend()
-    console.log("Backend off, starting it ")
+
+  } else {
+    console.log("~~~~~~Backend running~~~~~~~~ ")
 
   }
 
 
-}, 24 * 60 * 60 * 1000)
+}
+
+
+
+setInterval(checkAndRunBackend, 30 * 1000)
+runBackend()
 
 
 setInterval(async () => {
-  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
   const masterUpdateAvailable = await checkMasterUpdateAvailable()
   console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
   if (masterUpdateAvailable) {
     await updateMasterRepo()
     process.exit()
   }
-  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  console.log("~~~~~~~~~~~~~~~~~~~~~~MASTER UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
+
+
+  console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR BINARIES~~~~~~~~~~~~~~~~~~~~~~~~~")
+  const binariesUpdateAvailable = await checkBinariesUpdateAvailable()
+  console.log("checkBinariesUpdateAvailable", binariesUpdateAvailable)
+  if (binariesUpdateAvailable) {
+    await updateBinariesRepo()
+  }
+  console.log("~~~~~~~~~~~~~~~~~~~~~~BINARIES UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
+
 
 }, 1000 * 60 * 60 * 4)
 
@@ -238,7 +249,6 @@ const getSerialKey = () => {
 
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
-    console.log("Budbak");
     res.send(stats);
   });
 });
@@ -249,7 +259,7 @@ router.get("/startBackend", (req, res) => {
 });
 
 router.get("/startFrontend", (req, res) => {
-  runFrontend();
+  spawnFrontend();
   res.send({ ok: true });
 });
 
@@ -283,12 +293,14 @@ const updateRepo = () => {
   git.on("close", (code) => {
     console.log(`git child process exited with code ${code}`);
     updatePackages();
+    spawnFrontend();
   });
 
   git.on("error", (code) => {
     console.log(` gitchild process error with code ${code}`);
   });
 };
+
 
 const updateMasterRepo = () => {
   return new Promise((resolve, reject) => {
@@ -303,6 +315,39 @@ const updateMasterRepo = () => {
 
     git.on("close", (code) => {
       console.log(`git child process exited with code ${code}`);
+      console.log("~~~~~~~~~~~~~~~~~~~~UPDATED MASTER SUCCESSFULLY~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+      resolve()
+    });
+
+    git.on("error", (code) => {
+      console.log(` gitchild process error with code ${code}`);
+      resolve()
+    });
+
+
+  })
+
+};
+
+const updateBinariesRepo = () => {
+  return new Promise((resolve, reject) => {
+    const git = spawn("git", ["pull"], {
+      cwd: binariesPath,
+    }
+    );
+    git.stdout.on("data", (data) => {
+      console.log(`git stdout: ${data}`);
+    });
+
+    git.stderr.on("data", (data) => {
+      console.error(`git stderr: ${data}`);
+    });
+
+    git.on("close", (code) => {
+      console.log(`git child process exited with code ${code}`);
+      console.log("~~~~~~~~~~~~~~~~~~~~UPDATED BINARIES SUCCESSFULLY~~~~~~~~~~~~~~~~~~~~~~~~~")
+
       resolve()
     });
 
@@ -328,8 +373,6 @@ const checkMasterUpdateAvailable = async () => {
       }
     );
 
-    // console.log("Response", resp);
-    // console.log("Response", resp.data.sha);
     exec(
       "git rev-parse HEAD",
       { maxBuffer: 1024 * 500 },
@@ -345,6 +388,34 @@ const checkMasterUpdateAvailable = async () => {
     );
   });
 };
+
+const checkBinariesUpdateAvailable = async () => {
+  return new Promise(async (resolve, reject) => {
+    var resp = await axios.get(
+      "https://api.github.com/repos/ademcan/elabox-binaries/commits/master",
+      {
+        headers: {
+          Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
+        },
+      }
+    );
+
+    exec(
+      "git rev-parse HEAD",
+      { maxBuffer: 1024 * 500, cwd: binariesPath },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log("error", err);
+          reject(err);
+        }
+        console.log("stderr", stderr);
+        console.log("stdout", stdout, resp.data.sha);
+        resolve(stdout.trim() !== resp.data.sha);
+      }
+    );
+  });
+};
+
 
 
 const checkUpdateAvailable = async () => {
@@ -379,16 +450,8 @@ const checkUpdateAvailable = async () => {
 const checkRunning = async () => {
   console.log(*checkRunning")
   var backend, frontend;
-  try {
-    backend = await axios.get(url + ":3001");
-    if (backend.status >= 200 && backend.status < 300) {
-      backend = true;
-    } else {
-      backend = false;
-    }
-  } catch (error) {
-    backend = false;
-  }
+
+  backend = await checkIfBackendRunning()
 
   try {
     frontend = await checkIfFrontendRunning();
@@ -400,6 +463,21 @@ const checkRunning = async () => {
   console.log("frontend :", frontend)
   return { backend, frontend };
 };
+
+const checkIfBackendRunning = async () => {
+  var backend;
+  try {
+    backend = await axios.get(url + ":3001");
+    if (backend.status >= 200 && backend.status < 300) {
+      backend = true;
+    } else {
+      backend = false;
+    }
+  } catch (error) {
+    backend = false;
+  }
+  return backend;
+}
 
 const checkIfFrontendRunning = async () => {
   const browser = await puppeteer.launch({
@@ -422,62 +500,66 @@ const checkIfFrontendRunning = async () => {
 };
 
 
+function killBackendAndClearPort() {
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~KILLING COMPANION BACKEND~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+  exec("echo elabox | sudo -S lsof -t -i:3001", { maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
+    if (err) {
+      console.error("err lsof ", err);
+    }
+    else {
+      if (stdout) {
+        exec(`echo elabox | sudo -S kill -9 ${stdout}`, { maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
+          if (err) {
+            console.log("err kill");
+          }
+          else {
+            console.log("kill success");
+            console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~SUCCESSFULLY KILLED COMPANION BACKEND~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+          }
+        });
+      }
+      else {
+        console.log("Nothing running on 3001");
+      }
+    }
+  });
+}
+
 
 const spawnBackend = async () => {
   console.log("Spawning");
-  const install = spawn("nodemon", ["index.js", "--ignore", "/elastos/"], {
+  const backendProcess = spawn("node", ["index.js"], {
     cwd: companion_directory + "/src_server",
   });
-  install.stdout.on("data", (data) => {
+  backendProcess.stdout.on("data", (data) => {
     console.log(`Backend stdout: ${data}`);
   });
 
-  install.stderr.on("data", (data) => {
+  backendProcess.stderr.on("data", (data) => {
     console.error(`backend stderr: ${data}`);
+    if (data.indexOf("EADDRINUSE") !== -1) {
+      console.log("EADDRINUSE ERROR")
+      backendProcess.kill(1);
+
+      killBackendAndClearPort();
+    }
   });
 
-  install.on("close", (code) => {
-    console.log(`child process exited with code ${code}`);
+  backendProcess.on("close", (code) => {
+    console.log(`backend child process exited with code ${code}`);
+    runBackend()
   });
 
-  install.on("error", (code) => {
-    console.log(`child process error with code ${code}`);
+  backendProcess.on("error", (code) => {
+    console.log(`backend child process error with code ${code}`);
   });
   console.log("Spawned");
 };
 
-
-const runFrontend = async () => {
-  var dirExists = await checkFile(companion_directory);
-  console.log("Companinion Directory Exists", dirExists);
-  if (dirExists) {
-    var modules_exists = await checkFile(
-      companion_directory + "/package-lock.json"
-    );
-    console.log(modules_exists);
-    if (!modules_exists) {
-      exec(
-        "echo elabox | sudo -S npm install",
-        { cwd: companion_directory, maxBuffer: 1024 * 500 },
-        (err, stdout, stderr) => {
-          if (err) {
-            console.error("npm i ", err);
-          } else {
-            console.log("npm i ", stdout);
-            spawnFrontend();
-
-          }
-        }
-      );
-
-    } else {
-      spawnFrontend();
-    }
-  }
-};
-
 const updatePackages = async () => {
-  console.log("Installing");
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~INSTALLING PACKAGES FOR COMPANION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
   const install = spawn("npm", ["i"], {
     cwd: companion_directory,
   });
@@ -491,68 +573,51 @@ const updatePackages = async () => {
 
   install.on("close", (code) => {
     console.log(`build child process exited with code ${code}`);
-    spawnFrontend()
+    console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~INSTALLED PACKAGES FOR COMPANION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+    killBackendAndClearPort()
   });
 
   install.on("error", (code) => {
     console.log(`build child process error with code ${code}`);
   });
-  console.log("Installed");
 };
 
 
 const spawnFrontend = async () => {
-  console.log("Spawning");
-  const install = spawn("npm", ["run", "build"], {
-    cwd: companion_directory,
-  });
-  install.stdout.on("data", (data) => {
-    console.log(`stdout build: ${data}`);
-  });
-
-  install.stderr.on("data", (data) => {
-    console.error(`stderr build: ${data}`);
-  });
-
-  install.on("close", (code) => {
-    console.log(`build child process exited with code ${code}`);
-    exec(
-      "echo elabox | sudo -S rm -rf /var/www/elabox/build/",
-      (err, stdout, stderr) => {
-        if (err) {
-          console.error("rm", err);
-        } else {
-          console.log("rm", stdout);
-          exec(
-            "echo elabox | sudo -S cp -r build/ /var/www/elabox/build/",
-            { cwd: companion_directory, maxBuffer: 1024 * 500 },
-            (err, stdout, stderr) => {
-              if (err) {
-                console.error("cp", err);
-              } else {
-                console.log("cp", stdout);
-                exec(
-                  "echo elabox | sudo -S systemctl restart nginx",
-                  (err, stdout, stderr) => {
-                    if (err) {
-                      console.error("systemctl", err);
-                    } else {
-                      console.log("systemctl", stdout, "success");
-                    }
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~COPYING BUILD FOLDER FROM REPO TO NGINX~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+  exec(
+    "echo elabox | sudo -S rm -rf /var/www/elabox/build/",
+    (err, stdout, stderr) => {
+      if (err) {
+        console.error("rm", err);
+      } else {
+        console.log("rm", stdout);
+        exec(
+          "echo elabox | sudo -S cp -r build/ /var/www/elabox/build/",
+          { cwd: companion_directory, maxBuffer: 1024 * 500 },
+          (err, stdout, stderr) => {
+            if (err) {
+              console.error("cp", err);
+            } else {
+              console.log("cp", stdout);
+              exec(
+                "echo elabox | sudo -S systemctl restart nginx",
+                (err, stdout, stderr) => {
+                  if (err) {
+                    console.error("systemctl", err);
+                  } else {
+                    console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SUCCESSFULLY COPIED BUILD FOLDER FROM REPO TO NGINX AND RESTARTED NGINX~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                   }
-                );
-              }
+                }
+              );
             }
-          );
-        }
+          }
+        );
       }
-    );
-  });
+    }
+  );
 
-  install.on("error", (code) => {
-    console.log(`build child process error with code ${code}`);
-  });
-  console.log("Spawned");
 };
 
 const replaceWithMaintainencePage = () => {
@@ -678,3 +743,4 @@ app.listen(port, function () {
 
 
 module.exports = app;
+
