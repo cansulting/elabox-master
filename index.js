@@ -377,6 +377,7 @@ const checkUpdateAvailable = async () => {
 };
 
 const checkRunning = async () => {
+  console.log(*checkRunning")
   var backend, frontend;
   try {
     backend = await axios.get(url + ":3001");
@@ -395,7 +396,8 @@ const checkRunning = async () => {
     console.log(error);
     frontend = false;
   }
-
+  console.log("backend :", backend)
+  console.log("frontend :", frontend)
   return { backend, frontend };
 };
 
