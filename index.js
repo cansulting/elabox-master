@@ -64,8 +64,8 @@ const runBackend = async () => {
     var modules_exists = await checkFile(
       companion_directory + "/package-lock.json"
     );
-
     if (!modules_exists) {
+      console.log("Installing modules")
       exec(
         "echo elabox | sudo -S npm install",
         { cwd: companion_directory, maxBuffer: 1024 * 500 },
@@ -128,27 +128,27 @@ setInterval(checkAndRunBackend, 30 * 1000)
 // not sure if we need this runBackend() call here
 // runBackend()
 
-setInterval(async () => {
-  console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
-  const masterUpdateAvailable = await checkMasterUpdateAvailable()
-  console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
-  if (masterUpdateAvailable) {
-    await updateMasterRepo()
-    process.exit()
-  }
-  console.log("~~~~~~~~~~~~~~~~~~~~~~MASTER UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
+// setInterval(async () => {
+//   console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
+//   const masterUpdateAvailable = await checkMasterUpdateAvailable()
+//   console.log("checkMasterUpdateAvailable", masterUpdateAvailable)
+//   if (masterUpdateAvailable) {
+//     await updateMasterRepo()
+//     process.exit()
+//   }
+//   console.log("~~~~~~~~~~~~~~~~~~~~~~MASTER UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
 
 
-  console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR BINARIES~~~~~~~~~~~~~~~~~~~~~~~~~")
-  const binariesUpdateAvailable = await checkBinariesUpdateAvailable()
-  console.log("checkBinariesUpdateAvailable", binariesUpdateAvailable)
-  if (binariesUpdateAvailable) {
-    await updateBinariesRepo()
-  }
-  console.log("~~~~~~~~~~~~~~~~~~~~~~BINARIES UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
+//   console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR BINARIES~~~~~~~~~~~~~~~~~~~~~~~~~")
+//   const binariesUpdateAvailable = await checkBinariesUpdateAvailable()
+//   console.log("checkBinariesUpdateAvailable", binariesUpdateAvailable)
+//   if (binariesUpdateAvailable) {
+//     await updateBinariesRepo()
+//   }
+//   console.log("~~~~~~~~~~~~~~~~~~~~~~BINARIES UPDATE NOT AVAILABLE~~~~~~~~~~~~~~~~~~~~~~~")
 
 
-}, 1000 * 60 * 60 * 4)
+// }, 1000 * 60 * 60 * 4)
 
 
 
@@ -256,7 +256,7 @@ router.get("/startFrontend", (req, res) => {
 
 router.get("/checkUpdate", async (req, res) => {
   try {
-    res.send({ available: await checkUpdateAvailable() });
+    res.send({ available: await checkUpdateAvailable() || await checkBinariesUpdateAvailable() || checkMasterUpdateAvailable() });
   } catch (error) {
     console.error(error);
     res.send(error, 400);
@@ -266,8 +266,19 @@ router.get("/checkUpdate", async (req, res) => {
 router.get("/updateNow", async (req, res) => {
   await replaceWithMaintainencePage()
   updateRepo();
+  updateBinariesRepo()
+  updateMasterRepo()
   res.send({ ok: true });
 });
+
+router.get('/getVersion', (req, res) => {
+  const { version: companionVersion } = JSON.parse(fs.readFileSync(`${companion_directory}/package.json`))
+  const { version: binariesVersion } = JSON.parse(fs.readFileSync(`${binariesPath}/package.json`))
+  const { version: masterVersion } = JSON.parse(fs.readFileSync(`./package.json`))
+  res.send({ companionVersion, binariesVersion, masterVersion })
+
+});
+
 
 //////////
 // List of update functions
@@ -424,8 +435,8 @@ const checkUpdateAvailable = async () => {
       }
     );
 
-    console.log("Response", resp);
-    console.log("Response", resp.data.sha);
+    // console.log("Response", resp);
+    // console.log("Response", resp.data.sha);
     exec(
       "git rev-parse HEAD",
       { cwd: companion_directory, maxBuffer: 1024 * 500 },
