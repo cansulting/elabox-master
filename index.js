@@ -454,7 +454,7 @@ const checkUpdateAvailable = async () => {
 };
 
 const checkRunning = async () => {
-  console.log(*checkRunning")
+  console.log("checkRunning")
   var backend, frontend;
 
   backend = await checkIfBackendRunning()
