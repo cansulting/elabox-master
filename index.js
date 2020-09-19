@@ -62,7 +62,7 @@ const runBackend = async () => {
   console.log("Companion Directory Exists", dirExists);
   if (dirExists) {
     var modules_exists = await checkFile(
-      companion_directory + "/yarn.json"
+      companion_directory + "/yarn.lock"
     );
     if (!modules_exists) {
       console.log("Installing modules")
