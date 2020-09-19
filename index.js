@@ -39,7 +39,7 @@ let keyStorePath = elaPath + "/keystore.dat"
 let binariesPath = "/home/elabox/elabox-binaries"
 
 
-
+// check if file is readable or not
 const checkFile = (file) => {
   var prom = new Promise((resolve, reject) => {
     try {
@@ -53,13 +53,13 @@ const checkFile = (file) => {
       }
     }
   });
-
   return prom;
 };
 
+// check and run the back-end 
 const runBackend = async () => {
   var dirExists = await checkFile(companion_directory);
-  console.log("Companinion Directory Exists", dirExists);
+  console.log("Companion Directory Exists", dirExists);
   if (dirExists) {
     var modules_exists = await checkFile(
       companion_directory + "/package-lock.json"
@@ -75,11 +75,9 @@ const runBackend = async () => {
           } else {
             console.log("npm i ", stdout);
             spawnBackend();
-
           }
         }
       );
-
     } else {
       spawnBackend();
     }
@@ -90,33 +88,45 @@ const runBackend = async () => {
 
 
 const npmI = () => {
-  console.log("Installing Modules")
+  console.log("FUN npmI")
   exec("echo elabox | sudo -S npm install", (error, stdout, stderr) => {
     console.log("Npm Install", stdout)
     process.exit()
   })
 }
 
+// check and run the back-end if it stopped
 const checkAndRunBackend = async () => {
-
+  console.log("FUN checkAndRunBackend")
   if (!await checkIfBackendRunning()) {
-    console.log("~~~~~~Backend off, starting it~~~~~~~~ ")
-
+    console.log("~~Starting back-end~~")
     runBackend()
-
   } else {
-    console.log("~~~~~~Backend running~~~~~~~~ ")
-
+    console.log("~~Backend running~~")
   }
+}
 
-
+// check CPU temp and start/stop temp accordingly
+const checkFan = () => {
+  console.log("FUN checkFan")
+  return new Promise((resolve, reject) => {
+    exec("echo elabox | sudo -S node control_fan.js", (error, stdout, stderr) => {
+      if (error){
+        console.log("checkFan Err: ", error)
+      }
+      resolve()
+    })
+  })
 }
 
 
+//////////
+// List of recurring code 
+//////////
 
 setInterval(checkAndRunBackend, 30 * 1000)
-runBackend()
-
+// not sure if we need this runBackend() call here
+// runBackend()
 
 setInterval(async () => {
   console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -141,29 +151,19 @@ setInterval(async () => {
 }, 1000 * 60 * 60 * 4)
 
 
-const checkFan = () => {
-  return new Promise((resolve, reject) => {
-    console.log("Running fan control")
-    exec("echo elabox | sudo -S node control_fan.js", (error, stdout, stderr) => {
-      console.log("Fan Err", error)
-      console.log("Fan stdout", stdout)
-      console.log("Fan stderr", stderr)
-      resolve()
-    })
-  })
-}
 
 
-
+// ran every 10 minutes
 setInterval(async () => {
-
-  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  console.log("~~Start check~~")
+  console.log(new Date(Date.now()))
+  // run check_fan 
   checkFan()
-  console.log(Date.now())
+  // check if wallet exist
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
+  // check if all services are running
   const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
-  console.log(allServices)
   const running = allServices.every( (v) =>  v === true )
 
   console.log("All Running", running)
@@ -172,27 +172,21 @@ setInterval(async () => {
     const wallet = keyStoreObj.Account[0].Address
     const serial = await getSerialKey()
     const payload = { serial, wallet }
-
+    // update elabox database for rewards
     var resp = await axios.post(
       "https://159.100.248.209:8080/",
       payload
 
     );
-
     console.log("Response", resp.data);
   }
-
-
-  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  console.log("~~Finished check~~")
 }, 1000 * 60 * 10)
 
 
-
-
-
+// check and update carrier IP if needed
 const runCarrier = () => {
   console.log("Running Check Carrier Script")
-
   var prom = new Promise((resolve, reject) => {
     shell.cd(binariesPath)
     shell.exec(
@@ -211,19 +205,14 @@ const runCarrier = () => {
       }
     );
   });
-
   return prom;
 }
-
-
+// check carrier IP address every 4 hours
 setInterval(runCarrier, 1000 * 60 * 60 * 4)
 
-
-
-
-
-
+// get RPi serial key
 const getSerialKey = () => {
+  console.log("FUN getSerialKey")
   var prom = new Promise((resolve, reject) => {
     exec(
       "cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",
@@ -242,10 +231,12 @@ const getSerialKey = () => {
       }
     );
   });
-
   return prom;
 }
 
+//////////
+// List of endpoints
+//////////
 
 router.get("/", (req, res) => {
   checkRunning().then((stats) => {
@@ -277,6 +268,10 @@ router.get("/updateNow", async (req, res) => {
   updateRepo();
   res.send({ ok: true });
 });
+
+//////////
+// List of update functions
+//////////
 
 const updateRepo = () => {
   const git = spawn("git", ["pull"], {
@@ -650,38 +645,33 @@ const replaceWithMaintainencePage = () => {
 
 
 const checkElaRunning = () => {
-
+  console.log("FUN checkElaRunning")
   return new Promise((resolve, reject) => {
     exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
-      console.log(stdout)
       { stdout == "" ? elaRunning = false : elaRunning = true }
-      console.log("checkElaRunning ", elaRunning)
+      console.log("ela is running: ", elaRunning)
       resolve(elaRunning)
     })
   })
 }
 
-
-
 const checkDidRunning = () => {
-
+  console.log("FUN checkDidRunning")
   return new Promise((resolve, reject) => {
     exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
-      console.log(stdout)
       { stdout == "" ? didRunning = false : didRunning = true }
-      console.log("checkDidRunning ", didRunning)
+      console.log("did is running: ", didRunning)
       resolve(didRunning)
     })
   })
 }
 
 const checkCarrierRunning = () => {
-
+  console.log("FUN checkCarrierRunning")
   return new Promise((resolve, reject) => {
     exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
-      console.log(stdout)
       { stdout == "" ? carrierRunning = false : carrierRunning = true }
-      console.log("checkCarriereRunning ", carrierRunning)
+      console.log("carrier is running: ", carrierRunning)
       resolve(carrierRunning)
     });
   })
