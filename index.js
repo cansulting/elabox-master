@@ -62,7 +62,7 @@ const runBackend = async () => {
   console.log("Companion Directory Exists", dirExists);
   if (dirExists) {
     var modules_exists = await checkFile(
-      companion_directory + "/package-lock.json"
+      companion_directory + "/yarn.json"
     );
     if (!modules_exists) {
       console.log("Installing modules")
@@ -126,7 +126,7 @@ const checkFan = () => {
 
 setInterval(checkAndRunBackend, 30 * 1000)
 // not sure if we need this runBackend() call here
-// runBackend()
+runBackend()
 
 // setInterval(async () => {
 //   console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
