@@ -67,7 +67,8 @@ const runBackend = async () => {
     if (!modules_exists) {
       console.log("Installing modules")
       exec(
-        "echo elabox | sudo -S npm install",
+        "npm install",
+        // "echo elabox | sudo -S npm install",
         { cwd: companion_directory, maxBuffer: 1024 * 500 },
         (err, stdout, stderr) => {
           if (err) {
