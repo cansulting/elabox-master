@@ -62,7 +62,7 @@ const runBackend = async () => {
   console.log("Companion Directory Exists", dirExists);
   if (dirExists) {
     var modules_exists = await checkFile(
-      companion_directory + "/yarn.lock"
+      companion_directory + "/package-lock.json"
     );
     if (!modules_exists) {
       console.log("Installing modules")
@@ -659,7 +659,7 @@ const replaceWithMaintainencePage = () => {
 const checkElaRunning = () => {
   console.log("FUN checkElaRunning")
   return new Promise((resolve, reject) => {
-    exec('pidof ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+    exec('pidof -zx ela', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
       { stdout == "" ? elaRunning = false : elaRunning = true }
       console.log("ela is running: ", elaRunning)
       resolve(elaRunning)
@@ -670,7 +670,7 @@ const checkElaRunning = () => {
 const checkDidRunning = () => {
   console.log("FUN checkDidRunning")
   return new Promise((resolve, reject) => {
-    exec('pidof did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+    exec('pidof -zx did', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
       { stdout == "" ? didRunning = false : didRunning = true }
       console.log("did is running: ", didRunning)
       resolve(didRunning)
@@ -681,7 +681,7 @@ const checkDidRunning = () => {
 const checkCarrierRunning = () => {
   console.log("FUN checkCarrierRunning")
   return new Promise((resolve, reject) => {
-    exec('pidof ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+    exec('pidof -zx ela-bootstrapd', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
       { stdout == "" ? carrierRunning = false : carrierRunning = true }
       console.log("carrier is running: ", carrierRunning)
       resolve(carrierRunning)
