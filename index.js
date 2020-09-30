@@ -322,7 +322,7 @@ const updateMasterRepo = () => {
 
     git.on("close", (code) => {
       console.log(`git child process exited with code ${code}`);
-      console.log("~~~~~~~~~~~~~~~~~~~~UPDATED MASTER SUCCESSFULLY~~~~~~~~~~~~~~~~~~~~~~~~~")
+      console.log("*** Master repo update success ***")
 
       resolve()
     });
@@ -353,7 +353,7 @@ const updateBinariesRepo = () => {
 
     git.on("close", (code) => {
       console.log(`git child process exited with code ${code}`);
-      console.log("~~~~~~~~~~~~~~~~~~~~UPDATED BINARIES SUCCESSFULLY~~~~~~~~~~~~~~~~~~~~~~~~~")
+      console.log("*** Binaries repo update success ***")
 
       resolve()
     });
@@ -372,7 +372,7 @@ const updateBinariesRepo = () => {
 const checkMasterUpdateAvailable = async () => {
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
-      "https://api.github.com/repos/ademcan/elabox-master/commits/master",
+      "https://api.github.com/repos/cansulting/elabox-master/commits/master",
       {
         headers: {
           Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
@@ -399,7 +399,7 @@ const checkMasterUpdateAvailable = async () => {
 const checkBinariesUpdateAvailable = async () => {
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
-      "https://api.github.com/repos/ademcan/elabox-binaries/commits/master",
+      "https://api.github.com/repos/cansulting/elabox-binaries/commits/master",
       {
         headers: {
           Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
@@ -428,7 +428,7 @@ const checkBinariesUpdateAvailable = async () => {
 const checkUpdateAvailable = async () => {
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
-      "https://api.github.com/repos/ademcan/elabox-companion/commits/master",
+      "https://api.github.com/repos/cansulting/elabox-companion/commits/master",
       {
         headers: {
           Authorization: "token e1bc8dbecf3daaaa98340fea547e55e86ba260bd",
@@ -628,6 +628,7 @@ const spawnFrontend = async () => {
 
 };
 
+// Copy the maintenance HTML file until the update is complete
 const replaceWithMaintainencePage = () => {
   var prom = new Promise((resolve, reject) => {
     exec(
@@ -646,14 +647,7 @@ const replaceWithMaintainencePage = () => {
       }
     );
   });
-
   return prom;
-
-
-
-
-
-
 }
 
 
