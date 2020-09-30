@@ -389,8 +389,8 @@ const checkMasterUpdateAvailable = async () => {
           reject(err);
         }
         console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha);
-        resolve(stdout.trim() !== resp.data.sha);
+        console.log("stdout", stdout, resp.data.sha.trim());
+        resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
   });
@@ -416,8 +416,8 @@ const checkBinariesUpdateAvailable = async () => {
           reject(err);
         }
         console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha);
-        resolve(stdout.trim() !== resp.data.sha);
+        console.log("stdout", stdout, resp.data.sha.trim());
+        resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
   });
@@ -447,8 +447,8 @@ const checkUpdateAvailable = async () => {
           reject(err);
         }
         console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha);
-        resolve(stdout.trim() !== resp.data.sha);
+        console.log("stdout", stdout, resp.data.sha.trim());
+        resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
   });
