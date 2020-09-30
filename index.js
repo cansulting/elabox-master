@@ -511,7 +511,7 @@ function killBackendAndClearPort() {
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~KILLING COMPANION BACKEND~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
   // testing: echo -e 'elabox\n' | sudo -S lsof -t -i:3001
-  exec("echo elabox | sudo -S lsof -t -i:3001", { maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
+  exec("lsof -t -i:3001", { maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
     if (err) {
       console.error("err lsof ", err);
     }
