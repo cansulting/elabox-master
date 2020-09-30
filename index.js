@@ -257,7 +257,7 @@ router.get("/startFrontend", (req, res) => {
 
 router.get("/checkUpdate", async (req, res) => {
   try {
-    res.send({ available: await checkUpdateAvailable() || await checkBinariesUpdateAvailable() || checkMasterUpdateAvailable() });
+    res.send({ available: await checkUpdateAvailable() || await checkBinariesUpdateAvailable() || await checkMasterUpdateAvailable() });
   } catch (error) {
     console.error(error);
     res.send(error, 400);
