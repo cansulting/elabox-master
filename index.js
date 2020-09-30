@@ -111,7 +111,7 @@ const checkAndRunBackend = async () => {
 const checkFan = () => {
   console.log("FUN checkFan")
   return new Promise((resolve, reject) => {
-    exec("echo elabox | sudo -S node control_fan.js", (error, stdout, stderr) => {
+    exec("cd /home/elabox/elabox-master; echo elabox | sudo -S node control_fan.js", (error, stdout, stderr) => {
       if (error){
         console.log("checkFan Err: ", error)
       }
@@ -127,7 +127,7 @@ const checkFan = () => {
 
 setInterval(checkAndRunBackend, 30 * 1000)
 // not sure if we need this runBackend() call here
-runBackend()
+//runBackend()
 
 // setInterval(async () => {
 //   console.log("~~~~~~~~~~~~~~~~~~~~CHECKING UPDATE FOR MASTER~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -510,6 +510,7 @@ const checkIfFrontendRunning = async () => {
 function killBackendAndClearPort() {
   console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~KILLING COMPANION BACKEND~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
+  // testing: echo -e 'elabox\n' | sudo -S lsof -t -i:3001
   exec("echo elabox | sudo -S lsof -t -i:3001", { maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
     if (err) {
       console.error("err lsof ", err);
