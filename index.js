@@ -286,6 +286,7 @@ router.get('/getVersion', (req, res) => {
 //////////
 
 const updateRepo = () => {
+  console.log("Updating repo...")
   const git = spawn("git", ["pull"], {
     cwd: companion_directory,
   });
@@ -310,6 +311,7 @@ const updateRepo = () => {
 
 
 const updateMasterRepo = () => {
+  console.log("Updating master repo...")
   return new Promise((resolve, reject) => {
     const git = spawn("git", ["pull"]);
     git.stdout.on("data", (data) => {
@@ -338,6 +340,7 @@ const updateMasterRepo = () => {
 };
 
 const updateBinariesRepo = () => {
+  console.log("Updating binary repo...")
   return new Promise((resolve, reject) => {
     const git = spawn("git", ["pull"], {
       cwd: binariesPath,
@@ -630,6 +633,7 @@ const spawnFrontend = async () => {
 
 // Copy the maintenance HTML file until the update is complete
 const replaceWithMaintainencePage = () => {
+  console.log("replacing with Maintenance file")
   var prom = new Promise((resolve, reject) => {
     exec(
       "echo elabox | sudo -S cp ./maintainence/index.html /var/www/elabox/build/index.html",
