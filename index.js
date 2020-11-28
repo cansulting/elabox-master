@@ -396,7 +396,7 @@ const checkMasterUpdateAvailable = async () => {
         if (stdress){
           console.log("stderr", stderr);
         }
-        console.log("elabox-master local SHA: ", stdout)
+        console.log("elabox-master local SHA: ", stdout.replace(/\n/g, ""))
         console.log("elabox-master github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
@@ -427,7 +427,7 @@ const checkBinariesUpdateAvailable = async () => {
         if (stderr){
           console.log("stderr", stderr);
         }
-        console.log("elabox-binaries local SHA: ", stdout)
+        console.log("elabox-binaries local SHA: ", stdout.replace(/\n/g, ""))
         console.log("elabox-binaries github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
@@ -458,7 +458,7 @@ const checkUpdateAvailable = async () => {
         if (stderr){
           console.log("stderr", stderr);
         }
-        console.log("elabox-companion local SHA: ", stdout)
+        console.log("elabox-companion local SHA: ", stdout.replace(/\n/g, ""))
         console.log("elabox-companion github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
