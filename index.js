@@ -393,7 +393,7 @@ const checkMasterUpdateAvailable = async () => {
           console.log("error", err);
           reject(err);
         }
-        if (stdress){
+        if (stderr){
           console.log("stderr", stderr);
         }
         console.log("elabox-master local SHA: ", stdout.replace(/\n/g, ""))
