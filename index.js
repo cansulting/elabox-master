@@ -288,7 +288,7 @@ router.get('/getVersion', (req, res) => {
 //////////
 
 const updateRepo = () => {
-  console.log("Updating repo...")
+  console.log("Updating elabox-companion...")
   const git = spawn("git", ["pull"], {
     cwd: companion_directory,
   });
@@ -642,7 +642,7 @@ const spawnFrontend = async () => {
 
 // Copy the maintenance HTML file until the update is complete
 const replaceWithMaintainencePage = () => {
-  console.log("replacing with Maintenance file")
+  console.log("Replacing with maintenance file")
   var prom = new Promise((resolve, reject) => {
     exec(
       "echo elabox | sudo -S cp ./maintainence/index.html /var/www/elabox/build/index.html",
