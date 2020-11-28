@@ -256,6 +256,7 @@ router.get("/startFrontend", (req, res) => {
 });
 
 router.get("/checkUpdate", async (req, res) => {
+  console.log("Checking for updates...")
   try {
     res.send({ available: await checkUpdateAvailable() || await checkBinariesUpdateAvailable() || await checkMasterUpdateAvailable() });
   } catch (error) {
@@ -265,6 +266,7 @@ router.get("/checkUpdate", async (req, res) => {
 });
 
 router.get("/updateNow", async (req, res) => {
+  console.log("Updating the Elabox...")
   await replaceWithMaintainencePage()
   updateRepo();
   updateBinariesRepo()
@@ -371,8 +373,9 @@ const updateBinariesRepo = () => {
 
 };
 
-
+// check if udpate available for elabox-master 
 const checkMasterUpdateAvailable = async () => {
+  console.log("Checking elabox-master")
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
       "https://api.github.com/repos/cansulting/elabox-master/commits/master",
@@ -382,7 +385,6 @@ const checkMasterUpdateAvailable = async () => {
         },
       }
     );
-
     exec(
       "git rev-parse HEAD",
       { maxBuffer: 1024 * 500 },
@@ -391,15 +393,20 @@ const checkMasterUpdateAvailable = async () => {
           console.log("error", err);
           reject(err);
         }
-        console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha.trim());
+        if (stdress){
+          console.log("stderr", stderr);
+        }
+        console.log("elabox-master local SHA: ", stdout)
+        console.log("elabox-master github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
   });
 };
 
+// check if udpate available for elabox-binaries 
 const checkBinariesUpdateAvailable = async () => {
+  console.log("Checking elabox-binaries")
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
       "https://api.github.com/repos/cansulting/elabox-binaries/commits/master",
@@ -409,7 +416,6 @@ const checkBinariesUpdateAvailable = async () => {
         },
       }
     );
-
     exec(
       "git rev-parse HEAD",
       { maxBuffer: 1024 * 500, cwd: binariesPath },
@@ -418,17 +424,20 @@ const checkBinariesUpdateAvailable = async () => {
           console.log("error", err);
           reject(err);
         }
-        console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha.trim());
+        if (stderr){
+          console.log("stderr", stderr);
+        }
+        console.log("elabox-binaries local SHA: ", stdout)
+        console.log("elabox-binaries github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
   });
 };
 
-
-
+// check if udpate available for elabox-companion 
 const checkUpdateAvailable = async () => {
+  console.log("Checking elabox-companion")
   return new Promise(async (resolve, reject) => {
     var resp = await axios.get(
       "https://api.github.com/repos/cansulting/elabox-companion/commits/master",
@@ -438,9 +447,6 @@ const checkUpdateAvailable = async () => {
         },
       }
     );
-
-    // console.log("Response", resp);
-    // console.log("Response", resp.data.sha);
     exec(
       "git rev-parse HEAD",
       { cwd: companion_directory, maxBuffer: 1024 * 500 },
@@ -449,8 +455,11 @@ const checkUpdateAvailable = async () => {
           console.log("error", err);
           reject(err);
         }
-        console.log("stderr", stderr);
-        console.log("stdout", stdout, resp.data.sha.trim());
+        if (stderr){
+          console.log("stderr", stderr);
+        }
+        console.log("elabox-companion local SHA: ", stdout)
+        console.log("elabox-companion github SHA: ", resp.data.sha.trim());
         resolve(stdout.trim() !== resp.data.sha.trim());
       }
     );
