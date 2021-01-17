@@ -33,7 +33,7 @@ const router = express.Router();
 const url = "http://elabox.local";
 // const url = "http://192.168.0.23";
 
-const companion_directory = "/home/elabox/companion";
+const companion_directory = "/home/elabox/elabox-companion";
 let elaPath = "/home/elabox/supernode/ela"
 let keyStorePath = elaPath + "/keystore.dat"
 let binariesPath = "/home/elabox/elabox-binaries"
