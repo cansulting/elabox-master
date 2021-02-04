@@ -164,7 +164,7 @@ setInterval(async () => {
   const keyExists = await checkFile(keyStorePath)
   console.log(keyExists ? "Yes" : "No")
   // check if all services are running
-  const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning()])
+  const allServices = await Promise.all([checkElaRunning(), checkCarrierRunning(), checkDidRunning(), checkHiveRunning()])
   const running = allServices.every( (v) =>  v === true )
 
   console.log("All Running", running)
@@ -694,6 +694,17 @@ const checkCarrierRunning = () => {
       console.log("carrier is running: ", carrierRunning)
       resolve(carrierRunning)
     });
+  })
+}
+
+const checkHiveRunning = () => {
+  console.log("FUN checkHiveRunning")
+  return new Promise((resolve, reject) => {
+    exec('pidof -zx bash', { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+      { stdout == "" ? hiveRunning = false : hiveRunning = true }
+      console.log("hive is running: ", hiveRunning)
+      resolve(hiveRunning)
+    })
   })
 }
 
