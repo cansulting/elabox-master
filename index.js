@@ -519,7 +519,6 @@ const checkIfFrontendRunning = async () => {
   });
 
   var response = JSON.parse(text);
-  console.log("bubu");
 
   await browser.close();
   return response.ok;
@@ -562,8 +561,8 @@ const spawnBackend = async () => {
 
   backendSpawning = true;
 
-  const backendProcess = spawn("nohup node index.js &", {
-    cwd: companion_directory + "/src_server",
+  const backendProcess = spawn("nohup npm run start:server &", {
+    cwd: companion_directory,
     shell: true,
   });
 
